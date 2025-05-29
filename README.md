@@ -1,0 +1,2 @@
+# pingit
+Automated ping service
