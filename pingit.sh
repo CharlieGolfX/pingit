@@ -1,9 +1,20 @@
 #!/bin/bash
 
-LOGFILE="pingit.log"
+LOGDIR="logs"
+LOGFILE="$LOGDIR/pingit.log"
+MAXSIZE=1048576  # 1MB in bytes
+
+mkdir -p "$LOGDIR"
+
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE") -ge $MAXSIZE ]; then
+        mv "$LOGFILE" "$LOGDIR/pingit_$(date +"%Y%m%d_%H%M%S").log"
+    fi
+}
 
 while true; do
-    echo "----- $(date +"%H:%M:%S %d.%m.%Y") -----" >> "$LOGFILE"
+    rotate_log
+    echo "----- $(date +"%H:%M:%S %d.%m.%Y") -----" | tee -a "$LOGFILE"
     PING_OUTPUT=$(ping -c 1 1.1.1.1 2>&1)
     if echo "$PING_OUTPUT" | grep -q "1 received"; then
         echo "$PING_OUTPUT" | awk '
@@ -20,12 +31,12 @@ while true; do
                 print "ttl: " ttl[1]
                 print "time: " t[1] " ms"
             }
-        ' >> "$LOGFILE"
+        ' | tee -a "$LOGFILE"
     else
-        echo "--- 1.1.1.1 ping statistics ---" >> "$LOGFILE"
-        echo "Ping failed or no response received." >> "$LOGFILE"
-        echo "$PING_OUTPUT" | grep -E "unknown host|100% packet loss|unreachable|Name or service not known" >> "$LOGFILE"
+        echo "--- 1.1.1.1 ping statistics ---" | tee -a "$LOGFILE"
+        echo "Ping failed or no response received." | tee -a "$LOGFILE"
+        echo "$PING_OUTPUT" | grep -E "unknown host|100% packet loss|unreachable|Name or service not known" | tee -a "$LOGFILE"
     fi
-    echo "" >> "$LOGFILE"
+    echo "" | tee -a "$LOGFILE"
     sleep 5
 done
