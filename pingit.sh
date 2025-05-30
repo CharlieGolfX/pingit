@@ -12,6 +12,9 @@ rotate_log() {
     fi
 }
 
+# Delete log files older than 14 days
+find "$LOGDIR" -name "pingit_*.log" -type f -mtime +31 -delete
+
 while true; do
     rotate_log
     echo "----- $(date +"%H:%M:%S %d.%m.%Y") -----" | tee -a "$LOGFILE"
